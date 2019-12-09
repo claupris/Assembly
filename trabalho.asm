@@ -30,7 +30,7 @@ programa:  	mov ah,9
 			int 16h
 			jmp programa
         
-soma:   mov ah,09h  
+soma:   	mov ah,09h  
             mov dx, offset msg2  
             int 21h
             mov cx,0 
@@ -52,7 +52,7 @@ soma:   mov ah,09h
             call View 
             jmp exit 
             
-semEntrada:    mov ah,0
+semEntrada: mov ah,0
             int 16h     
             mov dx,0  
             mov bx,1 
