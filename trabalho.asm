@@ -1,148 +1,176 @@
 Codigo SEGMENT
-
  Assume cs:codigo; ds:codigo; es:codigo; ss:codigo
- org 100H
+org 100h
+.386
 
-Entrada: JMP programa
+Entrada: jmp programa       
 
-   
-   msg0 db 'qual operacao deseja fazer? "+", "-", "*": ', '$'
-   msg1 db  0AH,0DH,'Digite o primeiro numero Numero: ','$' 
-   msg2 db  0AH,0DH,'Digite o segundo Numero: ','$'    
-   msgt db  0AH, 0DH,'Resultado: $'
+msg0    db      '1-Soma',0dh,0ah,'2-subtracao',0dh,0ah,'3-multiplicacao',0Dh,0Ah, '$'
+msg2:    db      0dh,0ah,'Entre com o primeiro numero : $'
+msg3:    db      0dh,0ah,'Entre com o segundo numero : $'
+msg4:    db      0dh,0ah,'Escolha errada!!',0dh,0ah,'$' 
+msg5:    db      0dh,0ah,'Resultado : $' 
+msg6:    db      0dh,0ah ,'acabou o fucking trabalho!!! DISGRAAAAAAAAAAAAAACA', 0Dh,0Ah, '$'
 
-   
-   SINAL DB 4   
-   AUX1 DB 4   
-   AUX2 DB 4
-   RES DB 8
-   
-programa proc near
-  ;---------------------------------------------------------------- 
-  
-   MOV DX, OFFSET msg0 
-   CALL PRINTMSG
-   
-   MOV DX, OFFSET SINAL
-   
-   CALL LER
-   
-  ;----------------------------------------------------------------
-  
-   MOV DX, OFFSET msg1  	;movendo o valor do vetor para dx
-   CALL PRINTMSG;   
-   
-   MOV DX, OFFSET AUX1    	;movendo o valor do vetor para dx
+programa:  	mov ah,9
+			mov dx, offset msg0 
+			int 21h
+			mov ah,0                       
+			int 16h  
+			cmp al,31h 
+			je soma
+			cmp al,32h
+			je Subt
+			cmp al,33h
+			je Mult		
+			mov ah,09h
+			mov dx, offset msg4
+			int 21h
+			mov ah,0
+			int 16h
+			jmp programa
+        
+soma:   mov ah,09h  
+            mov dx, offset msg2  
+            int 21h
+            mov cx,0 
+            call semEntrada  
+            push dx
+            mov ah,9
+            mov dx, offset msg3
+            int 21h 
+            mov cx,0
+            call semEntrada
+            pop bx
+            add dx,bx
+            push dx 
+            mov ah,9
+            mov dx, offset msg5
+            int 21h
+            mov cx,10000
+            pop dx
+            call View 
+            jmp exit 
+            
+semEntrada:    mov ah,0
+            int 16h     
+            mov dx,0  
+            mov bx,1 
+            cmp al,0dh  
+            je FormNo 
+            sub ax,30h 
+            call ViewNo 
+            mov ah,0 ;we will mov 0 to ah before we push ax to the stack bec we only need the value in al
+            push ax  ;push the contents of ax to the stack
+            inc cx   ;we will add 1 to cx as this represent the counter for the number of digit
+            jmp semEntrada 
 
-   CALL LER 				;ler valor e colocar em aux
-   
-  ;----------------------------------------------------------------
-  
-   MOV DX, OFFSET msg2   	;movendo o valor do vetor para dx
-   CALL PRINTMSG    
-   
-   MOV DX, OFFSET AUX1   	;movendo valor de aux1 para dx
-
-   CALL LER              	; ler valor e coloca em aux1
-   
-  ;----------------------------------------------------------------
-   
-   MOV AL,SINAL+3     		;coloca o valor de aux3 no registrador al
-   MOV DL,AL             	;move o valor al para dl / pois al tera que que ser desalocado
-   
-   MOV AL, AUX1+3         	;coloca o valor de aux3 no registrador al
-   MOV AH, AUX1+2         	;coloca o valor de aux2 no registrador ah
-   MOV BL, AL            	;move o valor al para bl / pois al tera que que ser desalocado
-   MOV BH,AH             	;move o valor ah para bh / pois ah tera que que ser desalocado
-
-   MOV AL,AUX2+3         	;coloca o valor de aux3 no registrador al
-   MOV AH, AUX2+2        	;coloca o valor de aux2 no registrador ah
-   MOV CL,AL             	;move o valor al para cl / pois al tera que que ser desalocado
-   MOV CH,AH             	;move o valor ah para ch / pois ah tera que que ser desalocado
-   
-  ;----------------------------------------------------------------
-
-   CMP DL,'+'
-   JE SOMA             		;chama soma     
-   
-  ;----------------------------------------------------------------
-   MOV DX, OFFSET msgt
-   CALL PRINTMSG 
-   MOV DL,RES+3 			;mostra milhar
-   CALL PRINTCHAR
-   MOV DL, RES+4			;mostrar Somacentena
-   CALL PRINTCHAR
-   MOV DL,RES+5				;mostrar dezena
-   CALL PRINTCHAR
-   MOV DL, RES+6			;mostrar unidade
-   CALL PRINTCHAR
-   INT 20H 
-   
-programa ENDP
-   
-   
-SOMA proc near
-   ADD BL,CL   ;soma cl em bl
-   MOV AH,0    ;zera ah para evitar erros de overflow
-   MOV AL,BL   ;move bl pra al pois al sera requisitado como registrador padrao de ajuste
-   AAA         ;ajuste para decimal - exclusivamente no registrador al
-   
-   MOV DX,AX    ;move o valor de ax para dx para realizar operacao 
-   OR DX, 3030H ;converte para ascii
-   MOV RES+5,DL ;peguei a parte baixa do valor convertido e coloquei no vetor reposta
-   AAA          ;ajuste para decimal
-   
-   
-   MOV BL,DH    ;valor temporario resultante da soma dos primeiros digitos ( fica 1 vai 1)
-   
-   
-   ADD BH,CH    ;soma dos digitos da dezena
-   MOV AH,0     ;zera o ah para evitar falhas de ajuste
-   MOV AL,BH    ;colocando o resultante da soma em al, por o ajuste ocorre apenas em al
-   AAA          ;ajuste em decimal
-   MOV DX,AX    ;pega o valor do registrador inteiro ajustado e coloca em dx
-   OR DX,3030H  ;operacao bit a bit para converter para ascii
-   MOV RES+4,DL ;pega a resulta da unidade dessa soma e coloca no vetor
-   
-   MOV CH,DH    ; + 1 da soma das dezenas que vai virar a centena
-   
-   MOV AH,0     ; zerei o ah para futuros ajustes
-   ADD BL,RES+4 ;soma a soma das dezenas com o +1 das unidades
-    
-   MOV AL,BL    ;move o resultado em bl para al para conversao em decimal 
-   AAA          ;ajuste
-   MOV DX,AX    ;move todo o registrador para conversao em ascii
-   OR DX,3030H  ;conversao bit a bit para ascii
-   MOV RES+4,DL ;pega a parte baixa e coloca no vetor posicao 3
-   AAA          ;ajuste para decimal
-   MOV RES+3,CH ;pega o restante da soma de dezena e coloca no vetor posicao 2
-   AAA          ;converte para decimal
-   RET
-SOMA ENDP
-
-SUBTRACT proc near
+;we took each number separatly so we need to form our number 
+;and store in one bit for example if our number 235
+FormNo:     pop ax  
+            push dx      
+            mul bx
+            pop dx
+            add dx,ax
+            mov ax,bx       
+            mov bx,10
+            push dx
+            mul bx
+            pop dx
+            mov bx,ax
+            dec cx
+            cmp cx,0
+            jne FormNo
+            ret   
 
 
-SUBTRACT ENDP
+       
+       
+View:  mov ax,dx
+       mov dx,0
+       div cx 
+       call ViewNo
+       mov bx,dx 
+       mov dx,0
+       mov ax,cx 
+       mov cx,10
+       div cx
+       mov dx,bx 
+       mov cx,ax
+       cmp ax,0
+       jne View
+       ret
 
-LER proc near
-   MOV AH, 0AH   ;comando de leitura do vetor
-   INT 21h       ;interrupcao
-   ret           ;retorna para a funcao inicial de chamada
-LER endp
 
-PRINTCHAR proc near
-   mov AH, 02h ;02h = imprime char
-   int 21h     ;interrupcao
-   ret         ;retorna para a funcao inicial de chamada
-PRINTCHAR endp
-
-PRINTMSG proc near
-   mov ah,09   ;09 =  comando para imprimir vetor de char
-   int 21h     ;interrupcao
-   ret         ;retorna pra funcao inicial de chamada
-PRINTMSG endp
+ViewNo:    push ax 
+           push dx 
+           mov dx,ax 
+           add dl,30h 
+           mov ah,2
+           int 21h
+           pop dx  
+           pop ax
+           ret
+      
    
-   
-   Codigo ENDS
-   END Entrada
+exit:   mov dx,offset msg6
+        mov ah, 09h
+        int 21h  
+
+
+        mov ah, 0
+        int 16h
+
+        ret
+            
+                       
+Mult:   mov ah,09h
+            mov dx, offset msg2
+            int 21h
+            mov cx,0
+            call semEntrada
+            push dx
+            mov ah,9
+            mov dx, offset msg3
+            int 21h 
+            mov cx,0
+            call semEntrada
+            pop bx
+            mov ax,dx
+            mul bx 
+            mov dx,ax
+            push dx 
+            mov ah,9
+            mov dx, offset msg5
+            int 21h
+            mov cx,10000
+            pop dx
+            call View 
+            jmp exit 
+
+
+Subt:   mov ah,09h
+            mov dx, offset msg2
+            int 21h
+            mov cx,0
+            call semEntrada
+            push dx
+            mov ah,9
+            mov dx, offset msg3
+            int 21h 
+            mov cx,0
+            call semEntrada
+            pop bx
+            sub bx,dx
+            mov dx,bx
+            push dx 
+            mov ah,9
+            mov dx, offset msg5
+            int 21h
+            mov cx,10000
+            pop dx
+            call View 
+            jmp exit  
+
+Codigo ENDS
+   END Entrada			
