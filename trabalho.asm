@@ -57,17 +57,15 @@ semEntrada:    mov ah,0
             mov dx,0  
             mov bx,1 
             cmp al,0dh  
-            je FormNo 
+            je Form
             sub ax,30h 
             call ViewNo 
-            mov ah,0 ;we will mov 0 to ah before we push ax to the stack bec we only need the value in al
-            push ax  ;push the contents of ax to the stack
-            inc cx   ;we will add 1 to cx as this represent the counter for the number of digit
+            mov ah,0 
+            push ax  
+            inc cx   
             jmp semEntrada 
 
-;we took each number separatly so we need to form our number 
-;and store in one bit for example if our number 235
-FormNo:     pop ax  
+Form:     pop ax  
             push dx      
             mul bx
             pop dx
@@ -80,7 +78,7 @@ FormNo:     pop ax
             mov bx,ax
             dec cx
             cmp cx,0
-            jne FormNo
+            jne Form
             ret   
 
 
